@@ -1,24 +1,61 @@
 import asyncio
+import threading
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
-TOKEN = "8370672715:AAHMhxeaJhH-uDdHKSyRPYoqAKnlk0tVX6k"
-ADMIN_ID = 1396547701
+from aiohttp import web
+
+TOKEN = "ВСТАВЬ_ТОКЕН"
+ADMIN_ID = 123456789  # свой Telegram ID
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+# -----------------------------
+# WEB СЕРВЕР ДЛЯ RENDER (PORT FIX)
+# -----------------------------
+async def handle(request):
+    return web.Response(text="Bot is running")
+
+def run_web():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    web.run_app(app, port=10000)
+
+threading.Thread(target=run_web, daemon=True).start()
+
+# -----------------------------
+# /start
+# -----------------------------
 @dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer("Бот работает 👍")
 
-# ВСЕ сообщения
+    if message.from_user.id != ADMIN_ID:
+        await bot.send_message(
+            ADMIN_ID,
+            f"🆕 Новый пользователь:\nID: {message.from_user.id}\nИмя: {message.from_user.full_name}"
+        )
+
+# -----------------------------
+# сообщения пользователей → админу
+# -----------------------------
 @dp.message()
-async def handler(message: types.Message):
+async def handle_messages(message: types.Message):
 
-    text = message.text or ""
+    if message.from_user.id == ADMIN_ID:
+        return
 
-    # 1. ЕСЛИ ЭТО АДМИН → команда отправки
+    text = message.text or "[не текст]"
+
+    await bot.send_message(
+        ADMIN_ID,
+        f"📩 {message.from_user.id}:\n{text}"
+    )
+
+    # -----------------------------
+    # админ отправляет: ID текст
+    # -----------------------------
     if message.from_user.id == ADMIN_ID:
 
         parts = text.split(maxsplit=1)
@@ -32,19 +69,15 @@ async def handler(message: types.Message):
             msg = parts[1]
 
             await bot.send_message(user_id, msg)
+
             await message.answer("Отправлено ✔")
 
         except Exception as e:
             await message.answer(f"Ошибка:\n{e}")
 
-        return
-
-    # 2. ЕСЛИ ЭТО ПОЛЬЗОВАТЕЛЬ → пересылка админу
-    await bot.send_message(
-        ADMIN_ID,
-        f"📩 {message.from_user.id}:\n{text}"
-    )
-
+# -----------------------------
+# запуск бота
+# -----------------------------
 async def main():
     await dp.start_polling(bot)
 
