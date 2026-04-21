@@ -1,83 +1,63 @@
 import asyncio
-import threading
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
+from flask import Flask
+import threading
 
-from aiohttp import web
-
-TOKEN = "8370672715:AAHMhxeaJhH-uDdHKSyRPYoqAKnlk0tVX6k"
-ADMIN_ID = 1396547701  # свой Telegram ID
+TOKEN = "ВСТАВЬ_ТОКЕН"
+ADMIN_ID = 123456789
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# -----------------------------
-# WEB СЕРВЕР ДЛЯ RENDER (PORT FIX)
-# -----------------------------
-async def handle(request):
-    return web.Response(text="Bot is running")
+# ----------------- FLASK SERVER (Render PORT FIX) -----------------
+app = Flask(__name__)
 
-def run_web():
-    app = web.Application()
-    app.router.add_get("/", handle)
-    web.run_app(app, port=10000)
+@app.route("/")
+def home():
+    return "Bot is alive"
 
-threading.Thread(target=run_web, daemon=True).start()
+def run_flask():
+    app.run(host="0.0.0.0", port=10000)
 
-# -----------------------------
-# /start
-# -----------------------------
+threading.Thread(target=run_flask, daemon=True).start()
+
+# ----------------- BOT LOGIC -----------------
+
 @dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer("Бот работает 👍")
 
+@dp.message()
+async def handler(message: types.Message):
+
+    text = message.text or ""
+
+    # пользователь → админу
     if message.from_user.id != ADMIN_ID:
         await bot.send_message(
             ADMIN_ID,
-            f"🆕 Новый пользователь:\nID: {message.from_user.id}\nИмя: {message.from_user.full_name}"
+            f"📩 {message.from_user.id}:\n{text}"
         )
-
-# -----------------------------
-# сообщения пользователей → админу
-# -----------------------------
-@dp.message()
-async def handle_messages(message: types.Message):
-
-    if message.from_user.id == ADMIN_ID:
         return
 
-    text = message.text or "[не текст]"
-
-    await bot.send_message(
-        ADMIN_ID,
-        f"📩 {message.from_user.id}:\n{text}"
-    )
-
-    # -----------------------------
     # админ отправляет: ID текст
-    # -----------------------------
-    if message.from_user.id == ADMIN_ID:
+    parts = text.split(maxsplit=1)
 
-        parts = text.split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Формат: ID текст")
+        return
 
-        if len(parts) < 2:
-            await message.answer("Формат: ID текст")
-            return
+    try:
+        user_id = int(parts[0])
+        msg = parts[1]
 
-        try:
-            user_id = int(parts[0])
-            msg = parts[1]
+        await bot.send_message(user_id, msg)
+        await message.answer("Отправлено ✔")
 
-            await bot.send_message(user_id, msg)
+    except Exception as e:
+        await message.answer(f"Ошибка:\n{e}")
 
-            await message.answer("Отправлено ✔")
-
-        except Exception as e:
-            await message.answer(f"Ошибка:\n{e}")
-
-# -----------------------------
-# запуск бота
-# -----------------------------
 async def main():
     await dp.start_polling(bot)
 
