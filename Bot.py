@@ -5,8 +5,8 @@ from aiogram.filters import Command
 
 from aiohttp import web
 
-TOKEN = "ВСТАВЬ_ТОКЕН"
-ADMIN_ID = 123456789  # свой Telegram ID
+TOKEN = "8370672715:AAHMhxeaJhH-uDdHKSyRPYoqAKnlk0tVX6k"
+ADMIN_ID = 1396547701  # свой Telegram ID
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
