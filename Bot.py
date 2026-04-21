@@ -4,8 +4,8 @@ from aiogram.filters import Command
 from flask import Flask
 import threading
 
-TOKEN = "ВСТАВЬ_ТОКЕН"
-ADMIN_ID = 123456789
+TOKEN = "8370672715:AAHMhxeaJhH-uDdHKSyRPYoqAKnlk0tVX6k"
+ADMIN_ID = 1396547701
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
