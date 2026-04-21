@@ -26,7 +26,7 @@ threading.Thread(target=run_flask, daemon=True).start()
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    await message.answer("Бот работает 👍")
+    await message.answer("Здравствуйте, что-бы совершить покупку в магазине - Нажмите на значок магазина слева снизу")
 
 @dp.message()
 async def handler(message: types.Message):
